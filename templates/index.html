@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Chat App</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+        #chat_div, #notes_div {
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 20px;
+        }
+        #history_div {
+            height: 300px;
+            width: 400px;
+            overflow: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        #input_div {
+            margin-top: 10px;
+        }
+        #message_input {
+            width: 300px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            margin-right: 10px;
+        }
+        #send_button {
+            padding: 5px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .note {
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat_div">
+        <h2>Chat</h2>
+        <div id="history_div"></div>
+        <div id="input_div">
+            <input type="text" id="message_input">
+            <button id="send_button">Send</button>
+        </div>
+    </div>
+    <div id="notes_div">
+        <h2>Notes</h2>
+        <div id="notes_text_div">
+            <textarea id="notes_text" rows="10" cols="30"></textarea>
+        </div>
+        <div id="notes_sidebar">
+            <button id="new_note_button">New Note</button>
+            <div id="note_list"></div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Send message when user hits Enter key
+            $("#message_input").on("keydown", function(event) {
+                if (event.keyCode === 13) {
+                    send_message();
+                }
+            });
+
+            // Send message when user clicks Send button
+            $("#send_button").click(send_message);
+
+            // Create note when user clicks New Note button
+            $("#new_note_button").click(create_note);
+
+            // Load chat history and notes
+            get_history();
+            get_notes();
+        });
+
+        function send_message() {
+            var message = $("#message_input").val();
+            $.post("/send_message", {"message": message}, function(data) {
+                $("#message_input").val("");
+                get_history();
+            });
+        }
+
+        function get_history() {
+            $.get("/get_history", function(data) {
+                var history_html = "";
+                data.forEach(function(item) {
+                    history_html += item[0] + ": " + item[1] + "<br>";
+                });
+                $("#history_div").html(history_html);
+                $("#history_div").scrollTop($("#history_div")[0].scrollHeight);  // scroll to bottom
+            });
+        }
+
+        function create_note() {
+            var note_title = prompt("Enter a title for your note:");
+            if (note_title) {
+                var note_text = $("#notes_text").val();
+                $.post("/create_note", {"note_title": note_title, "note_text": note_text}, function(data) {
+                    get_notes();
+                });
+            }
+        }
